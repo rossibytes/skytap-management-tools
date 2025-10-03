@@ -1,0 +1,23 @@
+{
+  // TypeScript Project Configuration
+  // This is the root tsconfig.json that references the app and node configurations
+  
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" }, // Application TypeScript configuration
+    { "path": "./tsconfig.node.json" }  // Node.js TypeScript configuration (for Vite config, etc.)
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"] // Path alias for clean imports (e.g., @/components/Button)
+    },
+    // Relaxed TypeScript settings for faster development
+    "noImplicitAny": false,        // Allow implicit any types
+    "noUnusedParameters": false,   // Don't error on unused parameters
+    "skipLibCheck": true,          // Skip type checking of declaration files
+    "allowJs": true,               // Allow JavaScript files
+    "noUnusedLocals": false,       // Don't error on unused local variables
+    "strictNullChecks": false      // Allow null/undefined assignments
+  }
+}
