@@ -136,7 +136,7 @@ const Billing = () => {
                   x86RamHours += usage;
                   
                   x86MonthlyBreakdown.push({
-                    period: period.period || 'Unknown',
+                    period: period.period || 'For Billing Period',
                     startDate: period.start_date || '',
                     endDate: period.end_date || '',
                     x86RamHours: usage,
@@ -170,7 +170,7 @@ const Billing = () => {
                   storageHours += periodStorageHours;
                   
                   storageMonthlyBreakdown.push({
-                    period: period.period || 'Unknown',
+                    period: period.period || 'For Billing Period',
                     startDate: period.start_date || '',
                     endDate: period.end_date || '',
                     x86RamHours: 0,
