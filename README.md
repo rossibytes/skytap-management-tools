@@ -26,11 +26,20 @@ The Skytap Management Console is designed to streamline Skytap Cloud operations 
 - **Publish Set Configuration**: Set up secure sharing configurations
 
 ### Administrative Utilities
+- **Running Now Dashboard**: Real-time monitoring of running environments with configurable refresh intervals
 - **Project Cleaner**: Identify and remove empty projects to optimize costs
 - **IP Address Management**: Acquire, attach, and release public IP addresses
 - **User Management**: View and manage user accounts and permissions
 - **Billing & Cost Analysis**: Generate detailed usage and cost reports
 - **Usage Analytics**: Track resource utilization across environments
+
+### Running Now Dashboard Features
+- **Real-time Monitoring**: Live dashboard showing all currently running Skytap environments
+- **Configurable Refresh**: Set refresh intervals from 10-300 seconds with auto-refresh toggle
+- **Sortable Data Table**: Sort by ID, Name, Status, Uptime, Suspend Idle, or Region
+- **Uptime Calculation**: Automatically calculates and displays hours running from last_run timestamp
+- **Status Indicators**: Visual badges and icons for environment status and regions
+- **Manual Refresh**: On-demand data refresh with loading states and timestamps
 
 ## 🛠️ Technology Stack
 
@@ -249,6 +258,7 @@ The application integrates with the **Skytap Cloud API v2**. For comprehensive A
 
 - **Projects**: `/v2/projects` - Project management and listing
 - **Configurations**: `/v2/configurations` - Environment management
+- **Running Environments**: `/v2/configurations?query=status%3Arunning` - Real-time running environment monitoring
 - **Templates**: `/v2/templates` - Template operations
 - **IP Addresses**: `/v2/ips` - Public IP management
 - **Users**: `/v2/users` - User account management
@@ -404,13 +414,15 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ### Planned Features
 - [ ] Enhanced error handling and user feedback
-- [ ] Advanced filtering and search capabilities
+- [ ] Advanced filtering and search capabilities for Running Now Dashboard
 - [ ] Bulk operations for better efficiency
 - [ ] Real-time notifications and updates
 - [ ] Advanced reporting and analytics
 - [ ] Mobile-responsive improvements
 - [ ] Dark mode support
 - [ ] Internationalization (i18n)
+- [ ] Running Now Dashboard: Export functionality for environment data
+- [ ] Running Now Dashboard: Historical uptime tracking and trends
 
 ### Known Limitations
 - Development proxy should not be used in production
