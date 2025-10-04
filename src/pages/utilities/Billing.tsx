@@ -455,7 +455,9 @@ const Billing = () => {
                     <Card key={index}>
                       <CardHeader>
                         <CardTitle className="text-lg">{month.period}</CardTitle>
-                        <CardDescription>{month.startDate} - {month.endDate}</CardDescription>
+                        <CardDescription>
+                          {month.startDate ? format(new Date(month.startDate), "MM/dd/yyyy") : ''} - {month.endDate ? format(new Date(month.endDate), "MM/dd/yyyy") : ''}
+                        </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-2">
                         <div className="flex justify-between">
