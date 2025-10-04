@@ -45,6 +45,7 @@ const Billing = () => {
   const navigate = useNavigate();
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
+  const [customerId, setCustomerId] = useState<string>("");
   const [results, setResults] = useState<BillingResults | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +60,16 @@ const Billing = () => {
       toast({
         title: "Error",
         description: "Please select both start and end dates",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!customerId.trim()) {
+      setError("Please enter a customer ID");
+      toast({
+        title: "Error",
+        description: "Please enter a customer ID",
         variant: "destructive",
       });
       return;
@@ -96,8 +107,8 @@ const Billing = () => {
 
       // Create both reports simultaneously
       const [x86CreateResponse, storageCreateResponse] = await Promise.all([
-        skytapAPI.createX86Report(startDateStr, endDateStr),
-        skytapAPI.createStorageReport(startDateStr, endDateStr)
+        skytapAPI.createX86Report(startDateStr, endDateStr, customerId.trim()),
+        skytapAPI.createStorageReport(startDateStr, endDateStr, customerId.trim())
       ]);
 
       const x86ReportId = x86CreateResponse.id;
@@ -292,6 +303,20 @@ const Billing = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="customerId">Customer ID</Label>
+                <Input
+                  id="customerId"
+                  value={customerId}
+                  onChange={(e) => setCustomerId(e.target.value)}
+                  placeholder="Enter customer ID (e.g., 12345)"
+                  disabled={isGenerating}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter your Skytap customer ID for billing reports
+                </p>
+              </div>
+
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label>Start Date</Label>

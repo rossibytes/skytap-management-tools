@@ -276,7 +276,7 @@ class SkytapAPI {
   }
 
   // Billing and Reporting
-  async createX86Report(startDate: string, endDate: string, customerId: string = "83689"): Promise<{id: string}> {
+  async createX86Report(startDate: string, endDate: string, customerId: string): Promise<{id: string}> {
     return this.makeRequest<{id: string}>('/reports.json', {
       method: 'POST',
       body: JSON.stringify({
@@ -295,7 +295,7 @@ class SkytapAPI {
     });
   }
 
-  async createStorageReport(startDate: string, endDate: string, customerId: string = "83689"): Promise<{id: string}> {
+  async createStorageReport(startDate: string, endDate: string, customerId: string): Promise<{id: string}> {
     return this.makeRequest<{id: string}>('/reports.json', {
       method: 'POST',
       body: JSON.stringify({
@@ -329,7 +329,7 @@ class SkytapAPI {
     });
   }
 
-  async addConfigurationToProject(configId: string, projectId: string = "385982"): Promise<void> {
+  async addConfigurationToProject(configId: string, projectId: string): Promise<void> {
     return this.makeRequest<void>(`/v2/projects/${projectId}/configurations/${configId}`, {
       method: 'POST',
     });

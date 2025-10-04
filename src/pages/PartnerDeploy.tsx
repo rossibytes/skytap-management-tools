@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Copy, FileDown, ChevronDown, Download, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, FileDown, ChevronDown, Download, Trash2, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -78,10 +79,10 @@ const PartnerDeploy = () => {
   const { register: registerConfig, watch: watchConfig, formState: { errors: configErrors } } = useForm<ConfigurationForm>({
     resolver: zodResolver(configurationSchema),
     defaultValues: {
-      projectId: "385982",
-      usTemplateId: "2667185",
-      emeaTemplateId: "2667186",
-      apacTemplateId: "2667187",
+      projectId: "",
+      usTemplateId: "",
+      emeaTemplateId: "",
+      apacTemplateId: "",
     }
   });
 
@@ -475,11 +476,23 @@ const PartnerDeploy = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="projectId">Project ID</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="projectId">Project ID</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Enter the Skytap project ID where environments will be deployed</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Input
                   id="projectId"
                   {...registerConfig("projectId")}
-                  placeholder="Enter project ID"
+                  placeholder="Enter project ID (e.g., 123456)"
                   disabled={isDeploying}
                 />
                 {configErrors.projectId && (
@@ -489,11 +502,23 @@ const PartnerDeploy = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="usTemplateId">US Template ID</Label>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="usTemplateId">US Template ID</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Template ID for US region deployments</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <Input
                     id="usTemplateId"
                     {...registerConfig("usTemplateId")}
-                    placeholder="US Template ID"
+                    placeholder="US Template ID (e.g., 1234567)"
                     disabled={isDeploying}
                   />
                   {configErrors.usTemplateId && (
@@ -502,11 +527,23 @@ const PartnerDeploy = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="emeaTemplateId">EMEA Template ID</Label>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="emeaTemplateId">EMEA Template ID</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Template ID for EMEA region deployments</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <Input
                     id="emeaTemplateId"
                     {...registerConfig("emeaTemplateId")}
-                    placeholder="EMEA Template ID"
+                    placeholder="EMEA Template ID (e.g., 1234567)"
                     disabled={isDeploying}
                   />
                   {configErrors.emeaTemplateId && (
@@ -515,11 +552,23 @@ const PartnerDeploy = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="apacTemplateId">APAC Template ID</Label>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="apacTemplateId">APAC Template ID</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Template ID for APAC region deployments</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <Input
                     id="apacTemplateId"
                     {...registerConfig("apacTemplateId")}
-                    placeholder="APAC Template ID"
+                    placeholder="APAC Template ID (e.g., 1234567)"
                     disabled={isDeploying}
                   />
                   {configErrors.apacTemplateId && (
