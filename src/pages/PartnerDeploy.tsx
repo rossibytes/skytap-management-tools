@@ -25,6 +25,7 @@ const configurationSchema = z.object({
 
 const deploymentSchema = z.object({
   partnerName: z.string().min(1, "Partner name is required"),
+  namePrefix: z.string().min(1, "Name prefix is required"),
   skytapRegion: z.string().min(1, "Skytap region is required"),
 });
 
@@ -133,7 +134,7 @@ const PartnerDeploy = () => {
     
     // Step 1: Create Environment (0-20%)
     addLogMessage("Creating Environment...", 'info');
-    const environmentName = `HCL Commerce+ Partner - ${data.partnerName}`;
+    const environmentName = `${data.namePrefix} - ${data.partnerName}`;
     const response = await skytapAPI.deployFromTemplate(templateId, environmentName);
     const environmentData = response;
     setProgress(20);
@@ -273,13 +274,13 @@ const PartnerDeploy = () => {
     }
   };
 
-  const buildDetailsText = (): string => {
+  const buildDetailsText = (namePrefix: string): string => {
     const lines: string[] = [];
     
     // Header
     lines.push(`Dear ${partnerName},`);
     lines.push('');
-    lines.push('Below are the specific details for your HCL Commerce+ Partner Environment:');
+    lines.push(`Below are the specific details for your ${namePrefix} Environment:`);
     lines.push('');
     
     // Configuration Details
@@ -316,8 +317,8 @@ const PartnerDeploy = () => {
       lines.push('');
     }
     
-    // HCL Commerce+ endpoints
-    lines.push('🚀 HCL COMMERCE+ ENDPOINTS');
+    // Environment endpoints
+    lines.push('🚀 ENVIRONMENT ENDPOINTS');
     lines.push('═══════════════════════════════════════════════════════════════');
     lines.push('Ruby B2C Store:    https://es-db2.hclcomdev.com:6443/ruby');
     lines.push('Ruby B2B Store:    http://es-db2.hclcomdev.com:6443/ruby2b');
@@ -329,23 +330,23 @@ const PartnerDeploy = () => {
     lines.push('Password: wcs1admin');
     lines.push('');
     lines.push('Best regards,');
-    lines.push('HCL Commerce+ Team');
+    lines.push('Environment Team');
     
     return lines.join('\n');
   };
 
-  const buildDetailsHtml = (): string => {
+  const buildDetailsHtml = (namePrefix: string): string => {
     const html = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0;">
-          <h1 style="margin: 0; font-size: 24px;">HCL Commerce+ Partner Environment</h1>
+          <h1 style="margin: 0; font-size: 24px;">${namePrefix} Environment</h1>
           <p style="margin: 5px 0 0 0; opacity: 0.9;">Environment Deployment Details</p>
         </div>
         
         <div style="background: white; padding: 30px; border: 1px solid #e1e5e9; border-top: none;">
           <p style="font-size: 16px; margin-bottom: 20px;">Dear <strong>${partnerName}</strong>,</p>
           
-          <p style="margin-bottom: 25px;">Below are the specific details for your HCL Commerce+ Partner Environment:</p>
+          <p style="margin-bottom: 25px;">Below are the specific details for your ${namePrefix} Environment:</p>
           
           <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 25px; border-left: 4px solid #007bff;">
             <h3 style="margin: 0 0 15px 0; color: #007bff; font-size: 18px;">📋 Configuration Details</h3>
@@ -380,7 +381,7 @@ const PartnerDeploy = () => {
           ` : ''}
           
           <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 25px; border-left: 4px solid #dc3545;">
-            <h3 style="margin: 0 0 15px 0; color: #dc3545; font-size: 18px;">🚀 HCL Commerce+ Endpoints</h3>
+            <h3 style="margin: 0 0 15px 0; color: #dc3545; font-size: 18px;">🚀 Environment Endpoints</h3>
             <p style="margin: 5px 0;"><strong>Ruby B2C Store:</strong> <a href="https://es-db2.hclcomdev.com:6443/ruby" style="color: #007bff;">https://es-db2.hclcomdev.com:6443/ruby</a></p>
             <p style="margin: 5px 0;"><strong>Ruby B2B Store:</strong> <a href="http://es-db2.hclcomdev.com:6443/ruby2b" style="color: #007bff;">http://es-db2.hclcomdev.com:6443/ruby2b</a></p>
             <p style="margin: 5px 0;"><strong>Commerce Lab:</strong> <a href="https://es-db2.hclcomdev.com:7443/tooling/" style="color: #007bff;">https://es-db2.hclcomdev.com:7443/tooling/</a></p>
@@ -393,7 +394,7 @@ const PartnerDeploy = () => {
           </div>
           
           <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e5e9;">
-            <p style="margin: 0; color: #6c757d;">Best regards,<br><strong>HCL Commerce+ Team</strong></p>
+            <p style="margin: 0; color: #6c757d;">Best regards,<br><strong>Environment Team</strong></p>
           </div>
         </div>
       </div>
@@ -402,12 +403,14 @@ const PartnerDeploy = () => {
   };
 
   const getEmailContent = () => {
-    return buildDetailsText();
+    const namePrefix = watch("namePrefix") || "Partner Environment";
+    return buildDetailsText(namePrefix);
   };
 
   const copyDetailsToClipboard = async () => {
-    const text = buildDetailsText();
-    const html = buildDetailsHtml();
+    const namePrefix = watch("namePrefix") || "Partner Environment";
+    const text = buildDetailsText(namePrefix);
+    const html = buildDetailsHtml(namePrefix);
     const item = new ClipboardItem({
       'text/html': new Blob([html], { type: 'text/html' }),
       'text/plain': new Blob([text], { type: 'text/plain' })
@@ -420,7 +423,8 @@ const PartnerDeploy = () => {
   };
 
   const downloadDetailsAsPdf = () => {
-    const text = buildDetailsText();
+    const namePrefix = watch("namePrefix") || "Partner Environment";
+    const text = buildDetailsText(namePrefix);
     const html = `<!doctype html><html><head><title>Partner Environment Details</title>
       <style>
         body { font-family: Arial, sans-serif; padding: 24px; color: #111; }
@@ -596,6 +600,19 @@ const PartnerDeploy = () => {
                   />
                   {errors.partnerName && (
                     <p className="text-sm text-destructive">{errors.partnerName.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="namePrefix">Name Prefix</Label>
+                  <Input
+                    id="namePrefix"
+                    {...register("namePrefix")}
+                    placeholder="Enter name prefix (e.g., Partner Environment)"
+                    disabled={isDeploying}
+                  />
+                  {errors.namePrefix && (
+                    <p className="text-sm text-destructive">{errors.namePrefix.message}</p>
                   )}
                 </div>
 
