@@ -21,6 +21,7 @@ import Billing from "./pages/utilities/Billing";
 import Users from "./pages/utilities/Users";
 import CostCalculator from "./pages/utilities/CostCalculator";
 import Usage from "./pages/utilities/Usage";
+import RunningNow from "./pages/utilities/RunningNow";
 
 // Initialize React Query client for API state management
 const queryClient = new QueryClient();
@@ -63,6 +64,7 @@ const App = () => (
           <Route path="/utilities/users" element={<Users />} />
           <Route path="/utilities/cost-calculator" element={<CostCalculator />} />
           <Route path="/utilities/usage" element={<Usage />} />
+          <Route path="/utilities/running-now" element={<RunningNow />} />
           
           {/* Catch-all route for 404 errors - must be last */}
           <Route path="*" element={<NotFound />} />

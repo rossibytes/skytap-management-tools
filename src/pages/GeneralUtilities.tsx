@@ -1,9 +1,15 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Network, FileText, Users2, Calculator, BarChart3 } from "lucide-react";
+import { ArrowLeft, Trash2, Network, FileText, Users2, Calculator, BarChart3, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const utilities = [
+  {
+    title: "Running Now",
+    description: "Real-time dashboard for monitoring running environments",
+    icon: Monitor,
+    path: "/utilities/running-now",
+  },
   {
     title: "Project Cleaner",
     description: "Clean up and organize project resources",

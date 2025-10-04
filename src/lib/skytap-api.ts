@@ -428,6 +428,11 @@ class SkytapAPI {
     console.log(`Total users fetched: ${allUsers.length}`);
     return allUsers.slice(0, count); // Ensure we don't exceed requested count
   }
+
+  // Running Environments Dashboard
+  async getRunningConfigurations(): Promise<SkytapConfiguration[]> {
+    return this.makeRequest<SkytapConfiguration[]>('/v2/configurations?query=status%3Arunning');
+  }
 }
 
 // Export a singleton instance
