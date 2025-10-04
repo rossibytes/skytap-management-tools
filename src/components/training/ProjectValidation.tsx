@@ -21,6 +21,8 @@ interface ProjectValidationProps {
   projectValid: boolean;
   /** Error message if validation fails */
   error: string | null;
+  /** Project name for display in success message */
+  projectName?: string;
   /** Callback when project ID input changes */
   onProjectIdChange: (value: string) => void;
   /** Callback to trigger project validation */
@@ -40,6 +42,7 @@ export const ProjectValidation: React.FC<ProjectValidationProps> = ({
   isValidating,
   projectValid,
   error,
+  projectName,
   onProjectIdChange,
   onValidate
 }) => {
@@ -86,7 +89,7 @@ export const ProjectValidation: React.FC<ProjectValidationProps> = ({
         {projectValid && (
           <Alert>
             <AlertDescription>
-              ✅ Project {projectId} is validated and ready for training environment operations.
+              ✅ Project - <strong>{projectName || projectId}</strong> has been validated and ready for training environment operations.
             </AlertDescription>
           </Alert>
         )}

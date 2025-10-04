@@ -31,6 +31,7 @@ interface Step {
 const TrainingEnvironments = () => {
   const navigate = useNavigate();
   const [projectId, setProjectId] = useState("");
+  const [projectName, setProjectName] = useState<string>("");
   const [isValidating, setIsValidating] = useState(false);
   const [projectValid, setProjectValid] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,12 +86,13 @@ const TrainingEnvironments = () => {
     setError(null);
 
     try {
-      // Try to get project configurations to validate the project exists
-      await skytapAPI.getProjectConfigurations(projectId.trim());
+      // Get project details to validate the project exists and get the name
+      const projectDetails = await skytapAPI.getProject(projectId.trim());
+      setProjectName(projectDetails.name);
       setProjectValid(true);
       toast({
         title: "Project Validated",
-        description: `Project ${projectId} is valid and ready for training environment operations`,
+        description: `Project - ${projectDetails.name} has been validated and ready for training environment operations.`,
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to validate project';
@@ -187,10 +189,12 @@ const TrainingEnvironments = () => {
             isValidating={isValidating}
             projectValid={projectValid}
             error={error}
+            projectName={projectName}
             onProjectIdChange={(value) => {
               setProjectId(value);
               setProjectValid(false);
               setError(null);
+              setProjectName("");
             }}
             onValidate={validateProject}
           />

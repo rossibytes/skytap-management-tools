@@ -6,6 +6,17 @@ export interface SkytapProject {
   name: string;
   configuration_count: number;
   template_count: number;
+  url?: string;
+  summary?: string;
+  auto_add_role_name?: string;
+  show_project_members?: boolean;
+  created_at?: string;
+  owner_name?: string;
+  owner_url?: string;
+  user_role?: string;
+  user_count?: number;
+  can_edit?: boolean;
+  asset_count?: number;
 }
 
 export interface SkytapIPAddress {
@@ -134,6 +145,10 @@ class SkytapAPI {
   // Project Management
   async getAllProjects(count: number = 200, offset: number = 0): Promise<SkytapProject[]> {
     return this.makeRequest<SkytapProject[]>(`/v2/projects?count=${count}&offset=${offset}`);
+  }
+
+  async getProject(projectId: string): Promise<SkytapProject> {
+    return this.makeRequest<SkytapProject>(`/v2/projects/${projectId}.json`);
   }
 
   async deleteProject(projectId: string): Promise<void> {
