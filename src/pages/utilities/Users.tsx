@@ -35,9 +35,9 @@ const Users = () => {
     setSuccess(null);
     
     try {
-      console.log('Fetching users with count:', maxResults);
+      
       const fetchedUsers = await skytapAPI.getAllUsers(maxResults);
-      console.log('Fetched users:', fetchedUsers);
+      
       
       setUsers(fetchedUsers);
       setSuccess(`Found ${fetchedUsers.length} user(s)`);

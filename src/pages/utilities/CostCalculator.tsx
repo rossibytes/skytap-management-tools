@@ -35,6 +35,11 @@ interface CalculationResult {
   totalRamCost: number;
   totalStorageCost: number;
   totalCost: number;
+  ramHoursPerInstance: number;
+  storageHoursPerInstance: number;
+  inputRamGB: number;
+  inputStorageGB: number;
+  inputHoursPerDay: number;
 }
 
 const CostCalculator = () => {
@@ -105,7 +110,8 @@ const CostCalculator = () => {
       const startDate = new Date(instanceFormData.startDate);
       const endDate = new Date(instanceFormData.endDate);
       
-      if (startDate >= endDate) {
+      // Allow same-day ranges (1-day period). Only block when start is after end.
+      if (startDate > endDate) {
         setError('End date must be after start date');
         return;
       }
@@ -123,9 +129,13 @@ const CostCalculator = () => {
         return;
       }
 
+      // Calculate hours used per instance
+      const ramHoursPerInstance = ramPerVM * hoursPerDay * numberOfDays; // GB × hours × days
+      const storageHoursPerInstance = storagePerVM * 24 * numberOfDays; // GB × 24h × days
+
       // Calculate costs
-      const ramCostPerVM = ramPerVM * hoursPerDay * numberOfDays * billingRates.ramRate;
-      const storageCostPerVM = storagePerVM * 24 * numberOfDays * billingRates.storageRate; // Storage charged 24/7
+      const ramCostPerVM = ramHoursPerInstance * billingRates.ramRate;
+      const storageCostPerVM = storageHoursPerInstance * billingRates.storageRate; // Storage charged 24/7
       
       const totalRamCost = ramCostPerVM * numberOfVMs;
       const totalStorageCost = storageCostPerVM * numberOfVMs;
@@ -137,7 +147,12 @@ const CostCalculator = () => {
         storageCostPerInstance: storageCostPerVM,
         totalRamCost,
         totalStorageCost,
-        totalCost
+        totalCost,
+        ramHoursPerInstance,
+        storageHoursPerInstance,
+        inputRamGB: ramPerVM,
+        inputStorageGB: storagePerVM,
+        inputHoursPerDay: hoursPerDay,
       });
 
       toast({
@@ -166,21 +181,16 @@ const CostCalculator = () => {
         return;
       }
 
-      let totalCost: number;
-      
-      if (storageFormData.storageUnit === 'TB') {
-        // Convert TB to GB, then to MB, then calculate cost
-        totalCost = storageAmount * 1024 * 1024 * billingRates.storageRate;
-      } else {
-        // Convert GB to MB, then calculate cost
-        totalCost = storageAmount * 1024 * billingRates.storageRate;
-      }
+      // Normalize to GB
+      const storageGB = storageFormData.storageUnit === 'TB' ? storageAmount * 1024 : storageAmount;
+      // Daily cost using same formula as Instance Cost storage (GB × 24 × rate)
+      const dailyCost = storageGB * 24 * billingRates.storageRate;
 
-      setStorageResult(totalCost);
+      setStorageResult(dailyCost);
 
       toast({
         title: "Storage Cost Calculated",
-        description: `Daily storage cost: $${totalCost.toFixed(2)}`,
+        description: `Daily storage cost: $${dailyCost.toFixed(2)}`,
       });
 
     } catch (error) {
@@ -310,12 +320,12 @@ const CostCalculator = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>VM Configuration</CardTitle>
+                  <CardTitle>Environment Configuration</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="ramPerInstance">RAM Per Instance (GB) *</Label>
+                      <Label htmlFor="ramPerInstance">RAM Per Environment (GB) *</Label>
                       <Input
                         id="ramPerInstance"
                         type="number"
@@ -325,7 +335,7 @@ const CostCalculator = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="storagePerInstance">Storage Per Instance (GB) *</Label>
+                      <Label htmlFor="storagePerInstance">Storage Per Environment (GB) *</Label>
                       <Input
                         id="storagePerInstance"
                         type="number"
@@ -335,7 +345,7 @@ const CostCalculator = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="numberOfInstances">Number of Instances *</Label>
+                      <Label htmlFor="numberOfInstances">Number of Environments *</Label>
                       <Input
                         id="numberOfInstances"
                         type="number"
@@ -380,8 +390,13 @@ const CostCalculator = () => {
                         <div className="text-lg font-semibold">{instanceResult.numberOfDays} days</div>
                       </div>
                       <div className="space-y-2">
-                        <Label>RAM Cost Per Instance</Label>
-                        <div className="text-lg font-semibold">${instanceResult.ramCostPerInstance.toFixed(2)}</div>
+                        <Label>Calculation Formula</Label>
+                        <div className="text-sm text-muted-foreground">
+                          RAM Hours: {instanceResult.inputRamGB} GB × {instanceResult.inputHoursPerDay} h/day × {instanceResult.numberOfDays} day(s) = {instanceResult.ramHoursPerInstance.toFixed(2)} GB·h
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Storage Hours: {instanceResult.inputStorageGB} GB × 24 h/day × {instanceResult.numberOfDays} day(s) = {instanceResult.storageHoursPerInstance.toFixed(2)} GB·h
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label>Storage Cost Per Instance</Label>
@@ -453,11 +468,19 @@ const CostCalculator = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-primary mb-2">
-                        ${storageResult.toFixed(2)} per day
-                      </div>
-                      <div className="text-lg text-muted-foreground">
-                        ${(storageResult * 30).toFixed(2)} per month (30 days)
+                      <div className="grid gap-2">
+                        <div>
+                          <div className="text-sm text-muted-foreground">per hour</div>
+                          <div className="text-2xl font-bold text-primary">${(storageResult / 24).toFixed(4)}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">per day (24 hours)</div>
+                          <div className="text-2xl font-bold text-primary">${storageResult.toFixed(2)}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-muted-foreground">per month (30 days)</div>
+                          <div className="text-2xl font-bold text-primary">${(storageResult * 30).toFixed(2)}</div>
+                        </div>
                       </div>
                     </div>
                   </CardContent>

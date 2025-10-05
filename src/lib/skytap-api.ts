@@ -420,17 +420,17 @@ class SkytapAPI {
 
     while (hasMore && allUsers.length < count) {
       const endpoint = `/v2/users?count=${batchSize}&offset=${offset}`;
-      console.log(`Fetching users batch: ${endpoint}`);
+      
       
       const batch = await this.makeRequest<SkytapUser[]>(endpoint);
       
       if (!batch || batch.length === 0) {
-        console.log('No more users found');
+        
         hasMore = false;
         break;
       }
       
-      console.log(`Batch returned ${batch.length} users`);
+      
       allUsers = allUsers.concat(batch);
       offset += batchSize;
       
@@ -440,7 +440,7 @@ class SkytapAPI {
       }
     }
 
-    console.log(`Total users fetched: ${allUsers.length}`);
+    
     return allUsers.slice(0, count); // Ensure we don't exceed requested count
   }
 

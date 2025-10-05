@@ -25,6 +25,75 @@ The Skytap Management Console is designed to streamline Skytap Cloud operations 
 - **Portal Management**: Create and manage sharing portals for partner access
 - **Publish Set Configuration**: Set up secure sharing configurations
 
+#### Personalizing the Partner Environments HTML Email
+
+The Partner Environments deployment tool generates both plain-text and HTML email content that you can copy and send to recipients. The default version is intentionally anonymized (example hostnames, endpoints, and credentials) so the project can be shared publicly. To tailor the email to your organization, edit the HTML/text builders inside `src/pages/PartnerDeploy.tsx`.
+
+Key areas to customize:
+
+1) Name prefix and environment naming
+- Field: “Name Prefix” in the UI
+- Used in the email heading and subject/body
+- Code reference: within `buildDetailsText(namePrefix, ...)` and `buildDetailsHtml(namePrefix, ...)`
+
+2) Endpoint sections (Application Portal, Admin Interface, Development Tools)
+- Replace example URLs with your real endpoints
+- Code reference in HTML builder:
+  - `https://app.example.com:8443/portal`
+  - `http://admin.example.com:8080/dashboard`
+  - `https://dev.example.com:9443/tools/`
+- Recommended approach:
+  - Keep anchor tags and inline styles
+  - Only change the `href` and visible URL text
+
+3) Credentials block
+- Default credentials are anonymized (`admin` / `changeme123`)
+- Update to your onboarding defaults or remove this section
+- Code reference: credentials subsection in `buildDetailsText` and `buildDetailsHtml`
+
+4) Hosts file examples
+- The tool lists host mappings based on acquired IPs
+- Current behavior (dynamic): If N IPs are acquired, the email shows N lines: `app-vm1.example.com`, `app-vm2.example.com`, etc.
+- To use branded hostnames instead, replace `app-vm${index + 1}.example.com` with your preferred pattern (e.g., `portal.company.local`, `admin.company.local`).
+
+5) Section headings and copy tone
+- You can change emoji, colors, or headings like “Environment Endpoints”, “Credentials”, “Hosts File Entries”.
+- For HTML, keep the structure and inline styles for consistent rendering in email clients.
+
+6) Styling guidance (HTML)
+- The HTML uses inline styles to maximize compatibility across clients.
+- You may adjust colors, font sizes, and spacing (e.g., margin/padding).
+- Keep the main wrapper structure for simplicity.
+
+7) Where to edit in code
+- File: `src/pages/PartnerDeploy.tsx`
+- Look for two helper functions:
+  - `buildDetailsText(namePrefix, ...otherArgs)` – builds the plain-text email
+  - `buildDetailsHtml(namePrefix, ...otherArgs)` – builds the HTML email
+- Both functions accept the dynamic values gathered during deployment (e.g., acquired IPs) and render the messages.
+
+8) Safe defaults and anonymization
+- If you intend to keep the project public, retain example hostnames and credentials in source control.
+- Instead, override them at deployment time (form inputs) or maintain a private branch with your real values.
+
+9) Testing your changes
+- Use a test deployment and verify the copy/paste output.
+- Send the HTML to yourself using a real client (e.g., Outlook, Gmail) to validate layout.
+- Confirm the hosts section matches the number of VMs specified in the form.
+
+10) Advanced: extracting constants
+- For frequent edits, you can extract the endpoint URLs and labels into a config object near the top of `PartnerDeploy.tsx`, for example:
+  ```ts
+  const EMAIL_ENDPOINTS = {
+    portal: { label: 'Application Portal', url: 'https://portal.company.com:8443/portal' },
+    admin: { label: 'Admin Interface', url: 'https://admin.company.com:8080/dashboard' },
+    tools: { label: 'Development Tools', url: 'https://dev.company.com:9443/tools/' },
+  } as const;
+  ```
+  Then reference `EMAIL_ENDPOINTS.portal.url` inside the HTML and text builders. This keeps email changes in one place.
+
+If you need help locating the exact lines, search within `PartnerDeploy.tsx` for “Environment Endpoints”, “Hosts File Entries”, or the example domains (`app.example.com`).
+
 ### Administrative Utilities
 - **Running Now Dashboard**: Real-time monitoring of running environments with configurable refresh intervals
 - **Project Cleaner**: Identify and remove empty projects to optimize costs
@@ -412,17 +481,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## 🗺️ Roadmap
 
-### Planned Features
-- [ ] Enhanced error handling and user feedback
-- [ ] Advanced filtering and search capabilities for Running Now Dashboard
-- [ ] Bulk operations for better efficiency
-- [ ] Real-time notifications and updates
-- [ ] Advanced reporting and analytics
-- [ ] Mobile-responsive improvements
-- [ ] Dark mode support
-- [ ] Internationalization (i18n)
-- [ ] Running Now Dashboard: Export functionality for environment data
-- [ ] Running Now Dashboard: Historical uptime tracking and trends
+
 
 ### Known Limitations
 - Development proxy should not be used in production

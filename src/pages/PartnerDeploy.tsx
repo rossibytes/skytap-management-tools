@@ -24,6 +24,7 @@ const configurationSchema = z.object({
 });
 
 const deploymentSchema = z.object({
+  numberOfVMs: z.number().min(1, "Number of VMs must be at least 1").max(10, "Number of VMs cannot exceed 10"),
   partnerName: z.string().min(1, "Partner name is required"),
   namePrefix: z.string().min(1, "Name prefix is required"),
   skytapRegion: z.string().min(1, "Skytap region is required"),
@@ -38,8 +39,7 @@ interface DeploymentData {
   environmentId: string;
   environmentName: string;
   environmentState: string;
-  ip1: string;
-  ip2: string;
+  acquiredIPs: string[];
   portalId: string;
   portalUrl: string;
   configId: string;
@@ -72,8 +72,7 @@ const PartnerDeploy = () => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [envDetails, setEnvDetails] = useState<EnvironmentDetails | null>(null);
-  const [ip1, setIp1] = useState<string | null>(null);
-  const [ip2, setIp2] = useState<string | null>(null);
+  const [acquiredIPs, setAcquiredIPs] = useState<string[]>([]);
   const [portalDesktopsUrl, setPortalDesktopsUrl] = useState<string | null>(null);
   const [hours, setHours] = useState<number | null>(null);
 
@@ -163,36 +162,30 @@ const PartnerDeploy = () => {
     addLogMessage("Environment added to project successfully", 'success');
 
     // Step 3: Acquire IPs (35-55%)
-    addLogMessage("Acquiring First IP Address...", 'info');
-    const ipResp1 = await skytapAPI.acquirePublicIp(data.skytapRegion);
-    const acquiredIp1 = ipResp1.address;
-    setIp1(acquiredIp1);
-    addLogMessage(`IP1 Acquired: ${acquiredIp1}`, 'success');
-
-    addLogMessage("Acquiring Second IP Address...", 'info');
-    const ipResp2 = await skytapAPI.acquirePublicIp(data.skytapRegion);
-    const acquiredIp2 = ipResp2.address;
-    setIp2(acquiredIp2);
-    addLogMessage(`IP2 Acquired: ${acquiredIp2}`, 'success');
+    const numberOfVMs = data.numberOfVMs || 2;
+    const acquiredIPs: string[] = [];
+    
+    for (let i = 0; i < numberOfVMs; i++) {
+      addLogMessage(`Acquiring IP Address ${i + 1} of ${numberOfVMs}...`, 'info');
+      const ipResp = await skytapAPI.acquirePublicIp(data.skytapRegion);
+      acquiredIPs.push(ipResp.address);
+      addLogMessage(`IP${i + 1} Acquired: ${ipResp.address}`, 'success');
+    }
+    
+    setAcquiredIPs(acquiredIPs);
     setProgress(55);
 
     // Step 4: Attach IPs to VMs (55-80%)
-    if (vms.length >= 2) {
-      const vm1 = vms[0];
-      const vm2 = vms[1];
-      const iface1 = vm1.interfaces[0]?.id;
-      const iface2 = vm2.interfaces[0]?.id;
-
-      if (iface1) {
-        addLogMessage("Attaching IP1 to VM1...", 'info');
-        await skytapAPI.attachIpToInterface(String(environmentData.id), vm1.id, iface1, acquiredIp1);
-        addLogMessage("IP1 attached to VM1 successfully", 'success');
-      }
-
-      if (iface2) {
-        addLogMessage("Attaching IP2 to VM2...", 'info');
-        await skytapAPI.attachIpToInterface(String(environmentData.id), vm2.id, iface2, acquiredIp2);
-        addLogMessage("IP2 attached to VM2 successfully", 'success');
+    const vmsToUse = vms.slice(0, numberOfVMs);
+    
+    for (let i = 0; i < Math.min(acquiredIPs.length, vmsToUse.length); i++) {
+      const vm = vmsToUse[i];
+      const iface = vm.interfaces[0]?.id;
+      
+      if (iface) {
+        addLogMessage(`Attaching IP${i + 1} to VM${i + 1}...`, 'info');
+        await skytapAPI.attachIpToInterface(String(environmentData.id), vm.id, iface, acquiredIPs[i]);
+        addLogMessage(`IP${i + 1} attached to VM${i + 1} successfully`, 'success');
       }
     }
     setProgress(80);
@@ -231,8 +224,7 @@ const PartnerDeploy = () => {
       environmentId: String(environmentData.id),
       environmentName: environmentData.name,
       environmentState: environmentData.runstate,
-      ip1: acquiredIp1,
-      ip2: acquiredIp2,
+      acquiredIPs: acquiredIPs,
       portalId: String(ps.id),
       portalUrl: psd?.desktops_url || '',
       configId: String(environmentData.id),
@@ -248,8 +240,8 @@ const PartnerDeploy = () => {
     
     // Reset state
     setEnvDetails(null);
-    setIp1(null);
-    setIp2(null);
+    // setIp1 removed
+    // setIp2 removed
     setPortalDesktopsUrl(null);
     setHours(null);
     
@@ -291,16 +283,12 @@ const PartnerDeploy = () => {
     lines.push('');
     
     // Hosts file entries
-    if (ip1 || ip2) {
+    if (acquiredIPs.length > 0) {
       lines.push('🌐 HOSTS FILE ENTRIES');
       lines.push('═══════════════════════════════════════════════════════════════');
-      if (ip1) {
-        lines.push(`${ip1}    es-db2.hclcomdev.com`);
-        lines.push(`${ip1}    es-db2-data.hclcomdev.com`);
-      }
-      if (ip2) {
-        lines.push(`${ip2}    es-db2-live.hclcomdev.com`);
-      }
+      acquiredIPs.forEach((ip, index) => {
+        lines.push(`${ip}    app-vm${index + 1}.example.com`);
+      });
       lines.push('');
     }
     
@@ -320,14 +308,14 @@ const PartnerDeploy = () => {
     // Environment endpoints
     lines.push('🚀 ENVIRONMENT ENDPOINTS');
     lines.push('═══════════════════════════════════════════════════════════════');
-    lines.push('Ruby B2C Store:    https://es-db2.hclcomdev.com:6443/ruby');
-    lines.push('Ruby B2B Store:    http://es-db2.hclcomdev.com:6443/ruby2b');
-    lines.push('Commerce Lab:      https://es-db2.hclcomdev.com:7443/tooling/');
+    lines.push('Application Portal:    https://app.example.com:8443/portal');
+    lines.push('Admin Interface:    http://app.example.com:8443/dashboard');
+    lines.push('Development Tools:      https://app.example.com:9443/tools/');
     lines.push('');
     lines.push('🔐 CREDENTIALS');
     lines.push('═══════════════════════════════════════════════════════════════');
-    lines.push('Username: wcsadmin');
-    lines.push('Password: wcs1admin');
+    lines.push('Username: admin');
+    lines.push('Password: changeme123');
     lines.push('');
     lines.push('Best regards,');
     lines.push('Environment Team');
@@ -354,16 +342,14 @@ const PartnerDeploy = () => {
             <p style="margin: 5px 0;"><strong>Configuration ID:</strong> ${envDetails?.id || 'N/A'}</p>
           </div>
           
-          ${ip1 || ip2 ? `
+          ${acquiredIPs.length > 0 ? `
           <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 25px; border-left: 4px solid #28a745;">
             <h3 style="margin: 0 0 15px 0; color: #28a745; font-size: 18px;">🌐 Hosts File Entries</h3>
-            ${ip1 ? `
-              <p style="margin: 5px 0; font-family: monospace; background: white; padding: 8px; border-radius: 4px;">${ip1} &nbsp;&nbsp;&nbsp; es-db2.hclcomdev.com</p>
-              <p style="margin: 5px 0; font-family: monospace; background: white; padding: 8px; border-radius: 4px;">${ip1} &nbsp;&nbsp;&nbsp; es-db2-data.hclcomdev.com</p>
-            ` : ''}
-            ${ip2 ? `
-              <p style="margin: 5px 0; font-family: monospace; background: white; padding: 8px; border-radius: 4px;">${ip2} &nbsp;&nbsp;&nbsp; es-db2-live.hclcomdev.com</p>
-            ` : ''}
+            ${acquiredIPs.map((ip, index) => {
+              return `
+                <p style="margin: 5px 0; font-family: monospace; background: white; padding: 8px; border-radius: 4px;">${ip} &nbsp;&nbsp;&nbsp; app-vm${index + 1}.example.com</p>
+              `;
+            }).join('')}
           </div>
           ` : ''}
           
@@ -382,15 +368,15 @@ const PartnerDeploy = () => {
           
           <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 25px; border-left: 4px solid #dc3545;">
             <h3 style="margin: 0 0 15px 0; color: #dc3545; font-size: 18px;">🚀 Environment Endpoints</h3>
-            <p style="margin: 5px 0;"><strong>Ruby B2C Store:</strong> <a href="https://es-db2.hclcomdev.com:6443/ruby" style="color: #007bff;">https://es-db2.hclcomdev.com:6443/ruby</a></p>
-            <p style="margin: 5px 0;"><strong>Ruby B2B Store:</strong> <a href="http://es-db2.hclcomdev.com:6443/ruby2b" style="color: #007bff;">http://es-db2.hclcomdev.com:6443/ruby2b</a></p>
-            <p style="margin: 5px 0;"><strong>Commerce Lab:</strong> <a href="https://es-db2.hclcomdev.com:7443/tooling/" style="color: #007bff;">https://es-db2.hclcomdev.com:7443/tooling/</a></p>
+            <p style="margin: 5px 0;"><strong>Application Portal:</strong> <a href="https://app.example.com:8443/portal" style="color: #007bff;">https://app.example.com:8443/portal</a></p>
+            <p style="margin: 5px 0;"><strong>Admin Interface:</strong> <a href="http://app.example.com:8443/dashboard" style="color: #007bff;">http://app.example.com:8443/dashboard</a></p>
+            <p style="margin: 5px 0;"><strong>Development Tools:</strong> <a href="https://app.example.com:9443/tools/" style="color: #007bff;">https://app.example.com:9443/tools/</a></p>
           </div>
           
           <div style="background: #fff3cd; padding: 20px; border-radius: 6px; margin-bottom: 25px; border-left: 4px solid #ffc107;">
             <h3 style="margin: 0 0 15px 0; color: #856404; font-size: 18px;">🔐 Credentials</h3>
-            <p style="margin: 5px 0;"><strong>Username:</strong> wcsadmin</p>
-            <p style="margin: 5px 0;"><strong>Password:</strong> wcs1admin</p>
+            <p style="margin: 5px 0;"><strong>Username:</strong> admin</p>
+            <p style="margin: 5px 0;"><strong>Password:</strong> changeme123</p>
           </div>
           
           <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e5e9;">
@@ -590,6 +576,22 @@ const PartnerDeploy = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="numberOfVMs"># of VMs In Environment</Label>
+                  <Input
+                    id="numberOfVMs"
+                    type="number"
+                    {...register("numberOfVMs", { valueAsNumber: true })}
+                    placeholder="Enter number of VMs (1-10)"
+                    min="1"
+                    max="10"
+                    disabled={isDeploying}
+                  />
+                  {errors.numberOfVMs && (
+                    <p className="text-sm text-destructive">{errors.numberOfVMs.message}</p>
+                  )}
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="partnerName">Partner Name</Label>
                   <Input

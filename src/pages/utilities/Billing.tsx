@@ -47,6 +47,8 @@ const Billing = () => {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [customerId, setCustomerId] = useState<string>("");
+  const [ramBillingRate, setRamBillingRate] = useState<string>("0.03861");
+  const [storageBillingRate, setStorageBillingRate] = useState<string>("0.00011");
   const [results, setResults] = useState<BillingResults | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -203,15 +205,15 @@ const Billing = () => {
       }
 
       // Calculate costs
-      const x86RamCost = x86RamHours * X86_RAM_RATE;
-      const storageCost = storageHours * STORAGE_RATE;
+      const x86RamCost = x86RamHours * parseFloat(ramBillingRate);
+      const storageCost = storageHours * parseFloat(storageBillingRate);
       const totalCost = x86RamCost + storageCost;
 
       // Combine monthly breakdown data
       const monthlyBreakdown = x86MonthlyBreakdown.map((x86Month, index) => {
         const storageMonth = storageMonthlyBreakdown[index] || { storageHours: 0 };
-        const monthX86RamCost = x86Month.x86RamHours * X86_RAM_RATE;
-        const monthStorageCost = storageMonth.storageHours * STORAGE_RATE;
+        const monthX86RamCost = x86Month.x86RamHours * parseFloat(ramBillingRate);
+        const monthStorageCost = storageMonth.storageHours * parseFloat(storageBillingRate);
         const monthTotalCost = monthX86RamCost + monthStorageCost;
 
         return {
@@ -229,10 +231,10 @@ const Billing = () => {
       const billingResults: BillingResults = {
         period: `${format(startDate, "M/d/yyyy")} - ${format(endDate, "M/d/yyyy")}`,
         x86RamHours,
-        x86RamRate: X86_RAM_RATE,
+        x86RamRate: parseFloat(ramBillingRate),
         x86RamCost,
         storageHours,
-        storageRate: STORAGE_RATE,
+        storageRate: parseFloat(storageBillingRate),
         storageCost,
         totalCost,
         monthlyBreakdown
@@ -260,9 +262,87 @@ const Billing = () => {
   };
 
   const handleDownloadReport = () => {
+    if (!results) {
+      toast({
+        title: "No Report Available",
+        description: "Generate a billing report first, then try downloading again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Build CSV content
+    const escapeCsv = (val: unknown) => {
+      const s = String(val ?? "");
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+
+    const lines: string[] = [];
+
+    // Summary section
+    lines.push("Summary");
+    lines.push([
+      "Period",
+      "X86 RAM Hours",
+      "X86 RAM Rate",
+      "X86 RAM Cost",
+      "Storage GB Hours",
+      "Storage Rate",
+      "Storage Cost",
+      "Total Cost",
+    ].join(","));
+    lines.push([
+      escapeCsv(results.period),
+      results.x86RamHours.toFixed(2),
+      results.x86RamRate.toFixed(5),
+      results.x86RamCost.toFixed(2),
+      results.storageHours.toFixed(2),
+      results.storageRate.toFixed(5),
+      results.storageCost.toFixed(2),
+      results.totalCost.toFixed(2),
+    ].join(","));
+
+    lines.push("");
+    lines.push("Monthly Breakdown");
+    lines.push([
+      "Period",
+      "Start Date",
+      "End Date",
+      "X86 RAM Hours",
+      "Storage GB Hours",
+      "X86 RAM Cost",
+      "Storage Cost",
+      "Total Cost",
+    ].join(","));
+
+    results.monthlyBreakdown.forEach((m) => {
+      lines.push([
+        escapeCsv(m.period),
+        escapeCsv(m.startDate),
+        escapeCsv(m.endDate),
+        (m.x86RamHours ?? 0).toFixed(2),
+        (m.storageHours ?? 0).toFixed(2),
+        (m.x86RamCost ?? 0).toFixed(2),
+        (m.storageCost ?? 0).toFixed(2),
+        (m.totalCost ?? 0).toFixed(2),
+      ].join(","));
+    });
+
+    const csv = lines.join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    a.href = url;
+    a.download = `billing-report-${timestamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
     toast({
-      title: "Downloading Report",
-      description: "Your billing report is being downloaded",
+      title: "Report Downloaded",
+      description: "Your billing report CSV has been saved.",
     });
   };
 
@@ -317,6 +397,41 @@ const Billing = () => {
                   Enter your Skytap customer ID for billing reports
                 </p>
               </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="ramBillingRate">Metered RAM Billing Rate</Label>
+                  <Input
+                    id="ramBillingRate"
+                    type="number"
+                    step="0.00001"
+                    value={ramBillingRate}
+                    onChange={(e) => setRamBillingRate(e.target.value)}
+                    placeholder="Enter RAM billing rate (e.g., 0.03861)"
+                    disabled={isGenerating}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Rate per hour for RAM usage
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="storageBillingRate">Storage Billing Rate</Label>
+                  <Input
+                    id="storageBillingRate"
+                    type="number"
+                    step="0.00001"
+                    value={storageBillingRate}
+                    onChange={(e) => setStorageBillingRate(e.target.value)}
+                    placeholder="Enter storage billing rate (e.g., 0.00011)"
+                    disabled={isGenerating}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Rate per hour for storage usage
+                  </p>
+                </div>
+              </div>
+
 
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -450,7 +565,7 @@ const Billing = () => {
 
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-xl">Storage Hours</CardTitle>
+                      <CardTitle className="text-xl">Storage Hours / GB Hours</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="text-4xl font-bold text-primary">

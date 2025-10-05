@@ -38,12 +38,14 @@ const Usage = () => {
   const [envResults, setEnvResults] = useState<BillingCategory[] | null>(null);
   const [envTotalRam, setEnvTotalRam] = useState(0);
   const [envTotalStorage, setEnvTotalStorage] = useState(0);
+  const [unlabeledEnvironments, setUnlabeledEnvironments] = useState<string[]>([]);
 
   // Template states
   const [templateCount, setTemplateCount] = useState(3);
   const [templateProgress, setTemplateProgress] = useState(0);
   const [templateFetching, setTemplateFetching] = useState(false);
   const [templateResults, setTemplateResults] = useState<TemplateBillingCategory[] | null>(null);
+  const [unlabeledTemplates, setUnlabeledTemplates] = useState<string[]>([]);
 
   // Slider event handlers
   const handleBatchSizeChange = (_event: Event, newValue: number | number[]) => {
@@ -60,11 +62,11 @@ const Usage = () => {
     setEnvResults(null);
 
     try {
-      console.log('Starting environment analysis...');
+      
       
       // Fetch all configurations
       const configurations = await skytapAPI.getAllConfigurations(envCount, 0);
-      console.log('Configurations fetched:', configurations);
+      
       
       const billingCounts: Record<string, { count: number; svms: number; storage: number }> = {};
       let totalRam = 0;
@@ -77,19 +79,15 @@ const Usage = () => {
         totalStorage += (configuration.storage || 0) / 1024; // Convert MB to GB
       });
 
-      console.log('Environment totals:', { 
-        totalRam, 
-        totalStorageMB: totalStorage * 1024, 
-        totalStorageGB: totalStorage 
-      });
+      // Totals computed
 
       // Extract configuration IDs for batch processing
       const configurationIds = configurations.map((configuration: any) => configuration.id);
-      console.log('Configuration IDs extracted:', configurationIds);
+      
 
       // Process configurations in batches
       const totalBatches = Math.ceil(configurationIds.length / batchSize);
-      console.log(`Processing ${configurationIds.length} configurations in ${totalBatches} batches of ${batchSize}`);
+      
       
       for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
         const startIndex = batchIndex * batchSize;
@@ -133,7 +131,7 @@ const Usage = () => {
               billingCounts[text].storage += configStorage;
             }
           } catch (error) {
-            console.warn(`Error fetching labels for configuration ${configurationId}:`, error);
+            
             const configurationUrl = `https://cloud.skytap.com/configurations/${configurationId}`;
             unlabeledConfigurations.push(configurationUrl);
           }
@@ -145,13 +143,12 @@ const Usage = () => {
 
         // Wait for the batch delay (except after the last batch)
         if (batchIndex < totalBatches - 1) {
-          console.log(`Waiting ${delayMs}ms before next batch...`);
+          
           await new Promise(resolve => setTimeout(resolve, delayMs));
         }
       }
 
-      console.log('Environment billing counts:', billingCounts);
-      console.log('Unlabeled configuration URLs:', unlabeledConfigurations);
+      
 
       // Convert to array format
       const results: BillingCategory[] = Object.entries(billingCounts).map(([name, data]) => ({
@@ -196,36 +193,35 @@ const Usage = () => {
     setTemplateResults(null);
 
     try {
-      console.log('Starting template analysis...');
+      
       
       // Fetch all templates
       const allTemplates = await skytapAPI.getAllTemplates(templateCount, 0);
-      console.log('All templates fetched:', allTemplates);
+      
       
       // Filter templates that have owner_name
       const templates = allTemplates.filter(
         (template: SkytapTemplate) => template.owner_name
       );
-      console.log('Templates with owner_name:', templates);
-      console.log(`Filtered out ${allTemplates.length - templates.length} templates without owner_name`);
+      
 
       const billingCounts: Record<string, number> = {};
       const unlabeledTemplates: string[] = [];
 
       // Extract template IDs for batch processing
       const templateIds = templates.map((template: SkytapTemplate) => template.id);
-      console.log('Template IDs extracted:', templateIds);
+      
 
       // Process templates in batches
       const totalBatches = Math.ceil(templateIds.length / batchSize);
-      console.log(`Processing ${templateIds.length} templates in ${totalBatches} batches of ${batchSize}`);
+      
       
       for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
         const startIndex = batchIndex * batchSize;
         const endIndex = Math.min(startIndex + batchSize, templateIds.length);
         const batchTemplateIds = templateIds.slice(startIndex, endIndex);
         
-        console.log(`Processing batch ${batchIndex + 1}/${totalBatches}: templates ${startIndex + 1}-${endIndex}`);
+          
 
         // Process each template in the batch
         for (const templateId of batchTemplateIds) {
@@ -249,7 +245,7 @@ const Usage = () => {
               billingCounts[text] = (billingCounts[text] || 0) + 1;
             }
           } catch (error) {
-            console.warn(`Error fetching labels for template ${templateId}:`, error);
+            
             const templateUrl = `https://cloud.skytap.com/templates/${templateId}`;
             unlabeledTemplates.push(templateUrl);
           }
@@ -261,13 +257,12 @@ const Usage = () => {
 
         // Wait for the batch delay (except after the last batch)
         if (batchIndex < totalBatches - 1) {
-          console.log(`Waiting ${delayMs}ms before next batch...`);
+          
           await new Promise(resolve => setTimeout(resolve, delayMs));
         }
       }
 
-      console.log('Billing counts:', billingCounts);
-      console.log('Unlabeled template URLs:', unlabeledTemplates);
+      
 
       // Convert to array format
       const results: TemplateBillingCategory[] = Object.entries(billingCounts).map(([name, count]) => ({
@@ -276,6 +271,7 @@ const Usage = () => {
       }));
 
       setTemplateResults(results);
+      setUnlabeledTemplates(unlabeledTemplates);
       
       toast({
         title: "Templates Fetched",
@@ -529,6 +525,49 @@ const Usage = () => {
                       </Table>
                     </CardContent>
                   </Card>
+                  {unlabeledEnvironments.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-destructive">Unlabeled Environments</CardTitle>
+                        <CardDescription>
+                          {unlabeledEnvironments.length} environment(s) without billing category labels
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Environment URL</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {unlabeledEnvironments.map((url, index) => (
+                              <TableRow key={index}>
+                                <TableCell className="font-mono text-sm">{url}</TableCell>
+                                <TableCell>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(url);
+                                      toast({
+                                        title: "Copied to Clipboard",
+                                        description: "Environment URL copied",
+                                      });
+                                    }}
+                                  >
+                                    <Copy className="h-4 w-4 mr-2" />
+                                    Copy URL
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  )}
                 </>
               )}
             </TabsContent>
@@ -640,6 +679,49 @@ const Usage = () => {
                       </Card>
                     ))}
                   </div>
+                  {unlabeledTemplates.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-destructive">Unlabeled Templates</CardTitle>
+                        <CardDescription>
+                          {unlabeledTemplates.length} template(s) without billing category labels
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Template URL</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {unlabeledTemplates.map((url, index) => (
+                              <TableRow key={index}>
+                                <TableCell className="font-mono text-sm">{url}</TableCell>
+                                <TableCell>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(url);
+                                      toast({
+                                        title: "Copied to Clipboard",
+                                        description: "Template URL copied",
+                                      });
+                                    }}
+                                  >
+                                    <Copy className="h-4 w-4 mr-2" />
+                                    Copy URL
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               )}
             </TabsContent>
