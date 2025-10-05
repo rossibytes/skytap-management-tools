@@ -149,8 +149,8 @@ Before you begin, ensure you have the following installed:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-org/skytap-toolkit-hub.git
-   cd skytap-toolkit-hub
+   git clone https://github.com/rossibytes/skytap-management-tools.git
+   cd skytap-management-tools
    ```
 
 2. **Install dependencies**:
