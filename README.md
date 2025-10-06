@@ -98,7 +98,7 @@ If you need help locating the exact lines, search within `PartnerDeploy.tsx` for
 - **Running Now Dashboard**: Real-time monitoring of running environments with configurable refresh intervals
 - **Project Cleaner**: Identify and remove empty projects to optimize costs
 - **IP Address Management**: Acquire, attach, and release public IP addresses
-- **User Management**: View and manage user accounts and permissions
+- **User Management**: View and manage user accounts and permissions with mailing list export
 - **Billing & Cost Analysis**: Generate detailed usage and cost reports
 - **Usage Analytics**: Track resource utilization across environments
 
@@ -109,6 +109,14 @@ If you need help locating the exact lines, search within `PartnerDeploy.tsx` for
 - **Uptime Calculation**: Automatically calculates and displays hours running from last_run timestamp
 - **Status Indicators**: Visual badges and icons for environment status and regions
 - **Manual Refresh**: On-demand data refresh with loading states and timestamps
+
+### User Management Features
+- **User Listing**: Retrieve and display user accounts with comprehensive details
+- **Email Visibility**: View all user email addresses in a dedicated table column
+- **Mailing List Export**: One-click copy of all user email addresses for platform-wide communications
+- **User Filtering**: Filter users by activation status (activated vs. not activated)
+- **Sortable Data**: Sort users by ID, name, activation status, or last login date
+- **Bulk Operations**: Copy comma-separated email lists directly to clipboard for email clients
 
 ## 🛠️ Technology Stack
 
@@ -312,16 +320,6 @@ Your backend proxy should include:
 - **Audit Logging**: Log all operations for compliance
 
 ## 📚 API Documentation
-
-The application integrates with the **Skytap Cloud API v2**. For comprehensive API documentation, see:
-
-- **`SKYTAP_API_SPECIFICATION.md`** - Complete API reference including:
-  - Authentication methods and requirements
-  - Available endpoints and operations
-  - Request/response formats and schemas
-  - Error handling and status codes
-  - Rate limiting considerations
-  - Best practices and examples
 
 ### Key API Endpoints Used
 
