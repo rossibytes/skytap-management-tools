@@ -313,15 +313,7 @@ Your backend proxy should include:
 
 ## 📚 API Documentation
 
-The application integrates with the **Skytap Cloud API v2**. For comprehensive API documentation, see:
-
-- **`SKYTAP_API_SPECIFICATION.md`** - Complete API reference including:
-  - Authentication methods and requirements
-  - Available endpoints and operations
-  - Request/response formats and schemas
-  - Error handling and status codes
-  - Rate limiting considerations
-  - Best practices and examples
+The application integrates with the **Skytap Cloud API v2**.
 
 ### Key API Endpoints Used
 
