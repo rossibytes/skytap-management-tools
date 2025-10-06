@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, ArrowUpDown } from "lucide-react";
+import { ArrowLeft, Search, ArrowUpDown, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -79,6 +79,49 @@ const Users = () => {
       return date.toLocaleString();
     } catch {
       return dateString;
+    }
+  };
+
+  const handleCopyMailingList = async () => {
+    if (filteredUsers.length === 0) {
+      toast({
+        title: "No Users",
+        description: "No users available to copy.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Extract email addresses from filtered users
+      const emailList = filteredUsers
+        .map(user => user.email)
+        .filter(email => email && email.trim() !== '') // Filter out empty emails
+        .join(', ');
+
+      if (emailList === '') {
+        toast({
+          title: "No Emails",
+          description: "No valid email addresses found in the current user list.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(emailList);
+      
+      toast({
+        title: "Mailing List Copied",
+        description: `Copied ${filteredUsers.filter(user => user.email && user.email.trim() !== '').length} email addresses to clipboard.`,
+      });
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      toast({
+        title: "Copy Failed",
+        description: "Failed to copy email addresses to clipboard.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -219,9 +262,19 @@ const Users = () => {
               </Card>
 
               <div>
-                <h2 className="text-xl font-semibold mb-4">
-                  Users Found ({filteredUsers.length} users)
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">
+                    Users Found ({filteredUsers.length} users)
+                  </h2>
+                  <Button 
+                    onClick={handleCopyMailingList}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copy Mailing List
+                  </Button>
+                </div>
                 
                 <Card>
                   <CardContent className="p-0">
@@ -258,6 +311,7 @@ const Users = () => {
                               <ArrowUpDown className="h-4 w-4" />
                             </div>
                           </TableHead>
+                          <TableHead>Email</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -273,6 +327,7 @@ const Users = () => {
                               </div>
                             </TableCell>
                             <TableCell>{formatDate(user.last_login)}</TableCell>
+                            <TableCell>{user.email}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
